@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Set TCP keepalive parameters to match game server settings
+# KEEP_ALIVE_IDLE=10s, KEEP_ALIVE_INTERVAL=3s, KEEP_ALIVE_COUNT=5
+sysctl -w net.ipv4.tcp_keepalive_time=10 >/dev/null 2>&1 || true
+sysctl -w net.ipv4.tcp_keepalive_intvl=3 >/dev/null 2>&1 || true
+sysctl -w net.ipv4.tcp_keepalive_probes=5 >/dev/null 2>&1 || true
+
 cat > /usr/local/etc/haproxy/haproxy.cfg <<'EOF'
 global
     log stdout format raw local0
@@ -9,7 +15,6 @@ defaults
     log global
     mode tcp
     option tcplog
-    option abortonclose
     option clitcpka
     option srvtcpka
     timeout connect 5s
