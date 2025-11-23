@@ -13,8 +13,8 @@ defaults
     option clitcpka
     option srvtcpka
     timeout connect 5s
-    timeout client 15s
-    timeout server 15s
+    timeout client 25s
+    timeout server 25s
     timeout tunnel 1h
     timeout client-fin 10s
     timeout server-fin 10s
@@ -39,16 +39,16 @@ env | grep '^PROXY_' | sort | while IFS='=' read -r name value; do
     echo "frontend tcp_front_${listen_port}" >> /usr/local/etc/haproxy/haproxy.cfg
 
     if echo "${opts_csv}" | tr ',' '\n' | grep -q '^\s*proxy_protocol\s*$'; then
-        echo "    bind *:${listen_port} accept-proxy" >> /usr/local/etc/haproxy/haproxy.cfg
+        echo "    bind *:${listen_port} accept-proxy tcp-ut 23000" >> /usr/local/etc/haproxy/haproxy.cfg
     else
-        echo "    bind *:${listen_port}" >> /usr/local/etc/haproxy/haproxy.cfg
+        echo "    bind *:${listen_port} tcp-ut 23000" >> /usr/local/etc/haproxy/haproxy.cfg
     fi
 
     echo "    default_backend tcp_back_${listen_port}" >> /usr/local/etc/haproxy/haproxy.cfg
     echo "" >> /usr/local/etc/haproxy/haproxy.cfg
 
     # Build backend server line with optional flags
-    server_line="server server1 ${target_host}:${target_port}"
+    server_line="server server1 ${target_host}:${target_port} tcp-ut 23000"
 
     # send-proxy to backend (enabled by default for PROXY Protocol v2)
     # can be disabled with no_proxy option
