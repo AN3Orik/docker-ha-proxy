@@ -33,9 +33,26 @@ docker-compose up -d
 
 ```yaml
 environment:
-  - PROXY_<LISTEN_PORT>=<TARGET_HOST>:<TARGET_PORT>
-  - PROXY_<LISTEN_PORT>=<TARGET_HOST>:<TARGET_PORT>:proxy_protocol
+  - PROXY_<LISTEN_PORT>=<TARGET_HOST>:<TARGET_PORT>[:OPTIONS]
 ```
+
+**Default Behavior:**
+- PROXY Protocol v2 headers are sent to backend servers by default (preserves client IP)
+- Health checks are disabled by default (prevents connection spam to game servers)
+
+#### Available Options (comma-separated)
+
+- `proxy_protocol` - Accept PROXY Protocol from incoming clients (on bind)
+- `send-proxy-v1` - Send PROXY Protocol v1 to backend (instead of default v2)
+- `no_proxy` - Disable sending PROXY headers to backend
+- `check` - Enable health checks for this backend
+- `no_check` - Explicitly disable health checks (redundant, for clarity)
+- `check_interval=<ms>` - Health check interval in milliseconds (requires `check`)
+- `fall=<n>` - Number of failed checks before marking server down (requires `check`)
+- `rise=<n>` - Number of successful checks before marking server up (requires `check`)
+
+**Global Options:**
+- `ENABLE_HEALTH_CHECKS=true` - Enable health checks for all backends globally
 
 ### Examples
 
@@ -57,22 +74,50 @@ environment:
   - PROXY_5432=postgres-server.example.com:5432
 ```
 
-#### Redis Proxy
+#### Minecraft/Game Server (without PROXY Protocol)
+
+If your backend doesn't support PROXY Protocol:
 
 ```yaml
 ports:
-  - "6379:6379"
+  - "25565:25565"
 environment:
-  - PROXY_6379=redis-server.example.com:6379
+  - PROXY_25565=game-server.example.com:25565:no_proxy
 ```
 
-#### With Proxy Protocol
+#### With Incoming PROXY Protocol
+
+If clients send PROXY Protocol headers to HAProxy:
 
 ```yaml
 ports:
   - "7788:7788"
 environment:
   - PROXY_7788=backend.example.com:7798:proxy_protocol
+```
+
+#### Enable Health Checks
+
+Health checks are disabled by default. To enable globally:
+
+```yaml
+environment:
+  - ENABLE_HEALTH_CHECKS=true
+  - PROXY_25565=game-server.example.com:25565
+```
+
+Or enable per-backend:
+
+```yaml
+environment:
+  - PROXY_25565=game-server.example.com:25565:check
+```
+
+#### Custom Health Check Settings
+
+```yaml
+environment:
+  - PROXY_25565=game-server.example.com:25565:check,check_interval=30000,fall=3,rise=2
 ```
 
 #### Multiple Proxies
