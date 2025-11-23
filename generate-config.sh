@@ -10,9 +10,14 @@ defaults
     mode tcp
     option tcplog
     option abortonclose
+    option clitcpka
+    option srvtcpka
     timeout connect 5s
-    timeout client 1h
-    timeout server 1h
+    timeout client 30s
+    timeout server 30s
+    timeout tunnel 1h
+    timeout client-fin 30s
+    timeout server-fin 30s
     retries 3
 
 EOF
