@@ -13,12 +13,12 @@ defaults
     option clitcpka
     option srvtcpka
     timeout connect 5s
-    timeout client 30s
-    timeout server 30s
+    timeout client 15s
+    timeout server 15s
     timeout tunnel 1h
-    timeout client-fin 30s
-    timeout server-fin 30s
-    retries 3
+    timeout client-fin 10s
+    timeout server-fin 10s
+    retries 2
 
 EOF
 
