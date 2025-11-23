@@ -26,10 +26,11 @@ env | grep '^PROXY_' | sort | while IFS='=' read -r name value; do
     
     # Create frontend
     echo "frontend tcp_front_${listen_port}" >> /usr/local/etc/haproxy/haproxy.cfg
-    echo "    bind *:${listen_port}" >> /usr/local/etc/haproxy/haproxy.cfg
     
     if [ "$options" = "proxy_protocol" ]; then
-        echo "    option accept-proxy" >> /usr/local/etc/haproxy/haproxy.cfg
+        echo "    bind *:${listen_port} accept-proxy" >> /usr/local/etc/haproxy/haproxy.cfg
+    else
+        echo "    bind *:${listen_port}" >> /usr/local/etc/haproxy/haproxy.cfg
     fi
     
     echo "    default_backend tcp_back_${listen_port}" >> /usr/local/etc/haproxy/haproxy.cfg
