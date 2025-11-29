@@ -68,7 +68,18 @@ env | grep '^PROXY_' | sort | while IFS='=' read -r name value; do
             server_line+=" send-proxy"
         else
             # default to v2
-            server_line+=" send-proxy-v2"
+            proxy_v2_token=" send-proxy-v2"
+            
+            # Check for proxy_auth option to add TLV authentication
+            if echo "${opts_csv}" | tr ',' '\n' | grep -q 'proxy_auth='; then
+                auth_token=$(echo "${opts_csv}" | tr ',' '\n' | grep 'proxy_auth=' | head -n1 | cut -d'=' -f2)
+                if [ -n "${auth_token}" ]; then
+                    # Add TLV (0xE0) with authentication token
+                    proxy_v2_token+=" set-proxy-v2-tlv-fmt(0xE0) %[str(${auth_token})]"
+                fi
+            fi
+            
+            server_line+="${proxy_v2_token}"
         fi
     fi
 

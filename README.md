@@ -45,6 +45,7 @@ environment:
 - `proxy_protocol` - Accept PROXY Protocol from incoming clients (on bind)
 - `send-proxy-v1` - Send PROXY Protocol v1 to backend (instead of default v2)
 - `no_proxy` - Disable sending PROXY headers to backend
+- `proxy_auth=<token>` - Add authentication token to PROXY Protocol v2 TLV (0xE0)
 - `check` - Enable health checks for this backend
 - `no_check` - Explicitly disable health checks (redundant, for clarity)
 - `check_interval=<ms>` - Health check interval in milliseconds (requires `check`)
@@ -118,6 +119,51 @@ environment:
 ```yaml
 environment:
   - PROXY_25565=game-server.example.com:25565:check,check_interval=30000,fall=3,rise=2
+```
+
+#### PROXY Protocol v2 with Authentication (Security)
+
+Prevent IP spoofing by adding authentication token to PROXY Protocol v2 headers:
+
+```yaml
+environment:
+  - PROXY_7788=game-server.example.com:7788:proxy_auth=your-secret-token-here
+```
+
+HAProxy will send authentication token in TLV field `0xE0`. Backend must validate this token:
+
+**Netty/Java Backend Example:**
+```java
+// In your pipeline handler
+HAProxyMessage msg = (HAProxyMessage) in.readInbound();
+List<HAProxyTLV> tlvs = msg.tlvs();
+boolean authenticated = false;
+
+for (HAProxyTLV tlv : tlvs) {
+    if (tlv.typeByteValue() == (byte)0xE0) {
+        String token = tlv.content().toString(StandardCharsets.UTF_8);
+        if (token.equals("your-secret-token-here")) {
+            authenticated = true;
+            break;
+        }
+    }
+}
+
+if (!authenticated) {
+    ctx.close();
+    return;
+}
+```
+
+**Security Benefits:**
+- Prevents malicious actors in same datacenter from spoofing client IPs
+- No TLS overhead (authentication happens at protocol level)
+- Simple token-based validation
+
+**Note:** Use environment variables for tokens, never hardcode in compose files:
+```yaml
+environment:
+  - PROXY_7788=game-server.example.com:7788:proxy_auth=${HAPROXY_AUTH_TOKEN}
 ```
 
 #### Multiple Proxies
